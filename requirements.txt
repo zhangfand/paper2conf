@@ -1,0 +1,2 @@
+dropbox==11.27.0
+pandoc==2.1
