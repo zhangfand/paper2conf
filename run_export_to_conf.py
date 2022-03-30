@@ -37,11 +37,18 @@ def run(in_dir: str):
                                    password=env.CONF_API_TOKEN,
                                    cloud=True)
 
+    # export the files to confluence, and organize them in the same structure as the folder.
+
+    # A map from path (both directories and files) to page id.
+    # We will walk the folder in DFS manner. When a file is processed, the page corresponds to
+    # its parent folder is guaranteed created. We can use its page id in calling create_page().
+    #
+    # The root directory page id is set to None. This plays nicely with create_page() because
+    # when parent_id is None, the page will be created without any parent pages.
     page_ids = {
-        "Metadata Services": None
+        os.path.basename(in_dir.removesuffix("/")): None
     }
 
-    # export the files to confluence, and organize them in the same structure as the folder.
     for dir, dir_names, path_names in os.walk(in_dir):
         parent_dir_name = os.path.basename(dir)
         parent_page_id = page_ids[parent_dir_name]
