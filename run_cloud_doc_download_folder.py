@@ -52,4 +52,4 @@ def walk(folder_path: str, out_dir: str, dry_run=True):
         result = client.files_list_folder_continue(result.cursor)
 
 
-walk("/Infrastructure/Persistent Systems/Teams/Metadata Services/Memcache", "out/", dry_run=False)
+walk("/Infrastructure/Persistent Systems/Teams/Metadata Services/HaT", "out/", dry_run=False)

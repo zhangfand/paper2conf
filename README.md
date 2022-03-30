@@ -1,8 +1,8 @@
 # Overview
 
-The series of scripts exports paper docs from PiFS to Confluence. More specifically, it exports the
-docs and folders under a specified root folders and create a confluence page and subpages that
-mirror the structure.
+The series of scripts exports paper docs from Dropbox to Confluence. More
+specifically, it exports the docs and folders under a specified root folders
+and create a confluence page and subpages that mirror the structure.
 
 ## Constraints
 
