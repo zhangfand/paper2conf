@@ -3,6 +3,7 @@ import os
 from atlassian import confluence
 from writer import convert_page
 import argparse
+from shutil import which
 
 
 def run(in_dir: str, conf_api_token: str, conf_email: str, conf_url: str, conf_space_key: str):
@@ -116,4 +117,8 @@ if __name__ == "__main__":
     parser.add_argument('--conf_space_key', required=True, help='Confluence space key.')
     parser.add_argument('--conf_url', help='Confluence URL', default="https://dropbox-kms.atlassian.net")
     args = parser.parse_args()
-    run(args.path, args.conf_api_token, args.conf_email, args.conf_url, args.conf_space_key)
+
+    if which("pandoc") is None:
+        print("pandoc not installed. Run brew install pandoc or download from https://pandoc.org/")
+    else:
+        run(args.path, args.conf_api_token, args.conf_email, args.conf_url, args.conf_space_key)
