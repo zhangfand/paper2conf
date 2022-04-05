@@ -3,26 +3,24 @@ import os.path
 import dropbox
 from dropbox.files import FileMetadata
 from dropbox.users import FullAccount
+import argparse
 
-import env
-
-
-def get_namespace_id() -> str:
-    client = dropbox.Dropbox(env.PAPER_API_TOKEN)
+def get_namespace_id(dbx_token: str) -> str:
+    client = dropbox.Dropbox(dbx_token)
     account = client.users_get_current_account()
     assert isinstance(account, FullAccount)
     return account.root_info.root_namespace_id
 
 
-def walk(folder_path: str, out_dir: str, dry_run=True):
+def walk(folder_path: str, out_dir: str, dbx_token: str, dry_run=True):
     os.makedirs(out_dir, exist_ok=True)
 
-    namespace_id = get_namespace_id()
+    namespace_id = get_namespace_id(dbx_token)
 
     headers = {
         "Dropbox-API-Path-Root": f'{{".tag": "namespace_id", "namespace_id": "{namespace_id}"}}'
     }
-    client = dropbox.Dropbox(env.PAPER_API_TOKEN, headers=headers)
+    client = dropbox.Dropbox(dbx_token, headers=headers)
     result = client.files_list_folder(folder_path, recursive=True)
 
     while True:
@@ -51,5 +49,10 @@ def walk(folder_path: str, out_dir: str, dry_run=True):
 
         result = client.files_list_folder_continue(result.cursor)
 
-
-walk("/Infrastructure/Persistent Systems/Teams/Metadata Services/HaT", "out/", dry_run=False)
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Download Paper docs from a folder.')
+    parser.add_argument('--path', required=True, help='relative path from Dropbox root.')
+    parser.add_argument('--dbx_token', required=True, help='Dropbox Access Token. You can get it from https://dropbox.github.io/dropbox-api-v2-explorer/#files_list_folder.')
+    parser.add_argument('--commit', action='store_true', help='Actually download the file.')
+    args = parser.parse_args()
+    walk(args.path, "out/", args.dbx_token, dry_run=not args.commit)
