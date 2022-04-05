@@ -52,7 +52,8 @@ def walk(folder_path: str, out_dir: str, dbx_token: str, dry_run=True):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Download Paper docs from a folder.')
     parser.add_argument('--path', required=True, help='relative path from Dropbox root.')
+    parser.add_argument('--out', required=True, help='Output path')
     parser.add_argument('--dbx_token', required=True, help='Dropbox Access Token. You can get it from https://dropbox.github.io/dropbox-api-v2-explorer/#files_list_folder.')
     parser.add_argument('--commit', action='store_true', help='Actually download the file.')
     args = parser.parse_args()
-    walk(args.path, "out/", args.dbx_token, dry_run=not args.commit)
+    walk(args.path, args.out, args.dbx_token, dry_run=not args.commit)
