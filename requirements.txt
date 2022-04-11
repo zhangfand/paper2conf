@@ -2,3 +2,4 @@ dropbox==11.27.0
 pandoc==2.1
 python-dotenv~=0.19.2
 atlassian-python-api~=3.20.1
+more-itertools==8.12.0
