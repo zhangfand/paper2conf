@@ -4,6 +4,9 @@ from atlassian import confluence
 from writer import convert_page
 import argparse
 from shutil import which
+import sys
+import subprocess
+from typing import Optional
 
 
 def run(in_dir: str, conf_api_token: str, conf_email: str, conf_url: str, conf_space_key: str):
@@ -108,6 +111,19 @@ def run(in_dir: str, conf_api_token: str, conf_email: str, conf_url: str, conf_s
                 editor="v2",
             )
 
+def precondition_check() -> Optional[str]:
+    # Check python version. We need py3 3.10 or higher
+    if not sys.version_info >= (3, 10, 0):
+        return "Need python 3.10 or higher. Run brew install python@3.10 to install."
+
+    if which("pandoc") is None:
+        return "pandoc not installed. Get pandoc 2.17 from https://github.com/jgm/pandoc/releases/tag/2.17.1.1"
+
+    pandoc_str = subprocess.check_output(["pandoc", "--version", "|", "head -1"]).decode('utf-8').split('\n')[0]
+    if not pandoc_str.startswith('pandoc 2.17'):
+        return "pandoc needs to be 2.17 to make it work. `brew uninstall pandoc` and get pandoc 2.17 from https://github.com/jgm/pandoc/releases/tag/2.17.1.1"
+
+    return None
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Upload a folder of paper markdowns to a confluence space.')
@@ -118,7 +134,8 @@ if __name__ == "__main__":
     parser.add_argument('--conf_url', help='Confluence URL', default="https://dropbox-kms.atlassian.net")
     args = parser.parse_args()
 
-    if which("pandoc") is None:
-        print("pandoc not installed. Run brew install pandoc or download from https://pandoc.org/")
+    precondition_result = precondition_check()
+    if precondition_result:
+        print(precondition_result)
     else:
         run(args.path, args.conf_api_token, args.conf_email, args.conf_url, args.conf_space_key)
