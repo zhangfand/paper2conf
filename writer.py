@@ -167,7 +167,6 @@ class Parser:
                 raise AssertionError(f"unexpected Para: {el}")
 
     def do_block(self, el: Block):
-
         match el:
             case Plain(inlines):
                 self.do_inlines(inlines)
@@ -181,7 +180,13 @@ class Parser:
             case CodeBlock(attr, text):
                 self._buffer.write(code_block_template.format(text=text))
             case RawBlock(format, text):
-                raise AssertionError(f"RawBlock: {el}")
+                print(f"RawBlock found: {el}")
+                if format == Format("html"):
+                    self._buffer.write("<code>")
+                    self._buffer.write(escape_text(text))
+                    self._buffer.write("</code>")
+                else:
+                    raise AssertionError(f"RawBlock found: {el}")
             case BlockQuote(blocks):
                 self._buffer.write("<blockquote>\n")
                 for block in blocks:

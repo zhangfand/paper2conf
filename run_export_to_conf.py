@@ -7,6 +7,7 @@ from shutil import which
 import sys
 import subprocess
 from typing import Optional
+from urllib.error import HTTPError
 
 
 def run(in_dir: str, conf_api_token: str, conf_email: str, conf_url: str, conf_space_key: str):
@@ -38,6 +39,8 @@ def run(in_dir: str, conf_api_token: str, conf_email: str, conf_url: str, conf_s
                 raise AssertionError(f"{name} duplicates: {full_path} and {pages[name]}")
 
             pages[name] = full_path
+    if not pages:
+        raise Exception("Found no docs to migrate")
 
     client = confluence.Confluence(url=conf_url,
                                    username=conf_email,
@@ -83,14 +86,22 @@ def run(in_dir: str, conf_api_token: str, conf_email: str, conf_url: str, conf_s
             if os.path.exists(index_file_path):
                 body = convert_page(index_file_path)
             title = find_unique_title(subdir)
-            page_id = client.create_page(
-                space=conf_space_key,
-                title=title,
-                body=body,
-                parent_id=parent_page_id,
-                representation="storage",
-                editor="v2",
-            )
+            page_id = None
+            count = 0
+            while page_id is None and count <10:
+                try:
+                    page_id = client.create_page(
+                        space=conf_space_key,
+                        title=title,
+                        body=body,
+                        parent_id=parent_page_id,
+                        representation="storage",
+                        editor="v2",
+                    )
+                except confluence.HTTPError:
+                    title = f"{title} (Conflicted Copy {count})"
+                    count += 1
+
             page_ids[subdir] = page_id
 
         for path_name in path_names:
