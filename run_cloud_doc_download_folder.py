@@ -56,4 +56,4 @@ if __name__ == "__main__":
     parser.add_argument('--dbx_token', required=True, help='Dropbox Access Token. You can get it from https://dropbox.github.io/dropbox-api-v2-explorer/#files_list_folder.')
     parser.add_argument('--commit', action='store_true', help='Actually download the file.')
     args = parser.parse_args()
-    walk(args.path, args.out, args.dbx_token, dry_run=not args.commit)
+    walk(args.path, os.path.expanduser(args.out), args.dbx_token, dry_run=not args.commit)

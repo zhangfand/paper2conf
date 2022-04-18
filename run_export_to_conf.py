@@ -22,9 +22,13 @@ def run(in_dir: str, conf_api_token: str, conf_email: str, conf_url: str, conf_s
             pages[subdir] = full_path
 
         for file in path_names:
-            if not file.endswith(".paper"):
+            if not file.endswith(".paper") and not file.endswith(".md"):
                 continue
-            name = file.removesuffix(".paper")
+            if file.endswith(".paper"):
+                name = file.removesuffix(".paper")
+            else:
+                name = file.removesuffix(".md")
+
             if name == os.path.basename(dir):
                 continue
 
@@ -90,10 +94,13 @@ def run(in_dir: str, conf_api_token: str, conf_email: str, conf_url: str, conf_s
             page_ids[subdir] = page_id
 
         for path_name in path_names:
-            if not path_name.endswith(".paper"):
+            if not path_name.endswith(".paper") and not path_name.endswith(".md"):
                 continue
 
-            title = path_name.removesuffix(".paper")
+            if path_name.endswith(".paper"):                
+                title = path_name.removesuffix(".paper")
+            else:
+                title = path_name.removesuffix(".md")
 
             if title == os.path.basename(dir):
                 print(f"skipping paper doc {title} because its parent page has the same name")
@@ -102,6 +109,7 @@ def run(in_dir: str, conf_api_token: str, conf_email: str, conf_url: str, conf_s
             print(f"adding {title}")
             full_path = os.path.join(dir, path_name)
             body = convert_page(full_path)
+
             client.create_page(
                 space=conf_space_key,
                 title=find_unique_title(title),
@@ -138,4 +146,4 @@ if __name__ == "__main__":
     if precondition_result:
         print(precondition_result)
     else:
-        run(args.path, args.conf_api_token, args.conf_email, args.conf_url, args.conf_space_key)
+        run(os.path.expanduser(args.path), args.conf_api_token, args.conf_email, args.conf_url, args.conf_space_key)
