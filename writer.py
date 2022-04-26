@@ -146,9 +146,9 @@ class Parser:
                 self._buffer.write(f'<ri:url ri:value="{url}"/>')
                 self._buffer.write("</ac:image>")
             case Note(blocks):
-                raise AssertionError(f"Note: {el}")
+                raise AssertionError(f"Note: {el}. This suggests the text {el} cannot be recognized by the tool. Please put it in a codeblock in the original Paper doc.")
             case Span(attr, inlines):
-                raise AssertionError(f"Span: {el}")
+                raise AssertionError(f"Span: {el}. This suggests the text {el} cannot be recognized by the tool. Please put it in a codeblock in the original Paper doc.")
             case _:
                 raise AssertionError(f"Not Inline: {el}")
 
