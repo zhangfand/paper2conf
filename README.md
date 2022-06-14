@@ -5,6 +5,7 @@ specifically, it exports the docs and folders under a specified root folders
 and create a confluence page and subpages that mirror the structure.
 
 ## Help
+
 Please send feedback or questions to #paper2conf-feedback
 
 ## Constraints
@@ -14,7 +15,7 @@ Please send feedback or questions to #paper2conf-feedback
 ## Dependency
 
 1. Install dependent python packages. Python 3.10 and up is required to run this script successfully.
-   ```pip3 install -r requirements.txt```
+   `pip3 install -r requirements.txt`
 2. Install pandoc https://github.com/jgm/pandoc/releases/tag/2.17.1.1.
 
 ## Setup
@@ -49,6 +50,8 @@ For example: To migrate a folder under `/Tony Xu/Migration Test` to my personal 
 1. `python3 run_cloud_doc_download_folder.py --path "/Tony Xu/Migration Test" --out "out/" --dbx_token sl.xxx`
 
 2. `python3 run_export_to_conf.py --path "out/Tony Xu/Migration Test" --conf_api_token XYZ --conf_email tonyx@dropbox.com --conf_space_key "~1234567"`
+
+The default behavior is to skip pages if already exists, to override the behavior and allow the script to generate a new name, pass `--new_on_duplicate` when invoking the script.
 
 A helper script `run_purge_space` is provided to delete all docs in a space.
 
