@@ -10,7 +10,7 @@ from typing import Optional
 from urllib.error import HTTPError
 
 
-def run(in_dir: str, conf_api_token: str, conf_email: str, conf_url: str, conf_space_key: str):
+def run(in_dir: str, conf_api_token: str, conf_email: str, conf_url: str, conf_space_key: str, new_on_duplicate: bool):
     # check all page names are unique
     pages = {}
     for dir, dir_names, path_names in os.walk(in_dir):
@@ -73,6 +73,11 @@ def run(in_dir: str, conf_api_token: str, conf_email: str, conf_url: str, conf_s
 
         raise Exception("Exhausted search")
 
+    status = {
+        'skipped_dir': [],
+        'skipped_file': [],
+    }
+
     for dir, dir_names, path_names in os.walk(in_dir):
         parent_dir_name = os.path.basename(dir)
         parent_page_id = page_ids[parent_dir_name]
@@ -85,10 +90,13 @@ def run(in_dir: str, conf_api_token: str, conf_email: str, conf_url: str, conf_s
             body = ""
             if os.path.exists(index_file_path):
                 body = convert_page(index_file_path)
-            title = find_unique_title(subdir)
+
+            if new_on_duplicate:
+                title = find_unique_title(subdir)
+            else:
+                title = subdir
             page_id = None
-            count = 0
-            while page_id is None and count <10:
+            while page_id is None:
                 try:
                     page_id = client.create_page(
                         space=conf_space_key,
@@ -98,37 +106,74 @@ def run(in_dir: str, conf_api_token: str, conf_email: str, conf_url: str, conf_s
                         representation="storage",
                         editor="v2",
                     )
-                except confluence.HTTPError:
-                    title = f"{title} (Conflicted Copy {count})"
-                    count += 1
+                except confluence.HTTPError as e:
+                    if "already exists" in e.response.content.decode('utf-8') and not new_on_duplicate:
+                        page_id = client.get_page_by_title(conf_space_key, title)['id']
+                        print(f"Finding an existing parent page for: {title}")
+                    else:
+                        print(f"Skpping parent page: {title} due to error: {e}.")
+                        status['skipped_dir'].append(title)
+                        continue
 
             page_ids[subdir] = page_id
 
         for path_name in path_names:
+            full_path = os.path.join(dir, path_name)
+
             if not path_name.endswith(".paper") and not path_name.endswith(".md"):
+                print(f"Skipping {path_name} becuase it doesn't have the right extension. .paper or .md")
+                if path_name != ".DS_Store":
+                    status['skipped_file'].append(full_path)
                 continue
 
-            if path_name.endswith(".paper"):                
+            if path_name.endswith(".paper"):
                 title = path_name.removesuffix(".paper")
             else:
                 title = path_name.removesuffix(".md")
 
             if title == os.path.basename(dir):
                 print(f"skipping paper doc {title} because its parent page has the same name")
+                status['skipped_file'].append(full_path)
                 continue
 
             print(f"adding {title}")
-            full_path = os.path.join(dir, path_name)
-            body = convert_page(full_path)
+            try:
+                body = convert_page(full_path)
+            except Exception as e:
+                print(f"Skipping {title} because it cannot be converted")
+                status['skipped_file'].append(full_path)
+                continue
 
-            client.create_page(
-                space=conf_space_key,
-                title=find_unique_title(title),
-                body=body,
-                parent_id=parent_page_id,
-                representation="storage",
-                editor="v2",
-            )
+            if new_on_duplicate:
+                new_title = find_unique_title(title)
+            else:
+                new_title = title
+
+            try:
+                client.create_page(
+                    space=conf_space_key,
+                    title=new_title,
+                    body=body,
+                    parent_id=parent_page_id,
+                    representation="storage",
+                    editor="v2",
+                )
+            except confluence.HTTPError as e:
+                if "already exists" in e.response.content.decode('utf-8') and not new_on_duplicate:
+                    print(f"Skipping {title} since it already exists")
+                else:
+                    print(f"Skipping {title} because we hit a confluence exception {e}")
+                status['skipped_file'].append(full_path)
+
+    print("".join(["-"]*20))
+    print(f"Summary:")
+    print(f"Skipped Dirs:")
+    for path_name in status['skipped_dir']:
+        print(f"{path_name}")
+    print(f"Skipped Files:")
+    for path_name in status['skipped_file']:
+        print(f"{path_name}")
+
 
 def precondition_check() -> Optional[str]:
     # Check python version. We need py3 3.10 or higher
@@ -151,10 +196,11 @@ if __name__ == "__main__":
     parser.add_argument('--conf_email', required=True, help='Your email address in Confluence.')
     parser.add_argument('--conf_space_key', required=True, help='Confluence space key.')
     parser.add_argument('--conf_url', help='Confluence URL', default="https://dropbox-kms.atlassian.net")
+    parser.add_argument('--new_on_duplicate', help='Whether to create a new page on duplicates', action='store_true')
     args = parser.parse_args()
 
     precondition_result = precondition_check()
     if precondition_result:
         print(precondition_result)
     else:
-        run(os.path.expanduser(args.path), args.conf_api_token, args.conf_email, args.conf_url, args.conf_space_key)
+        run(os.path.expanduser(args.path), args.conf_api_token, args.conf_email, args.conf_url, args.conf_space_key, args.new_on_duplicate)
